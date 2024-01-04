@@ -175,6 +175,8 @@ endef
 ifdef CONFIG_TARGET_armsr_armv8
 define Kernel/InstallModules
 	rm -rf $(TARGET_DIR)/lib/modules
+	# Modules are loaded from initrd init script
+	rm -rf $(TARGET_DIR)/etc/modules-boot.d/* $(TARGET_DIR)/etc/modules.d/*
 	+$(KERNEL_MAKE) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
 	rm -f $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/source \
 		$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/build
@@ -189,8 +191,9 @@ INITRAMFS_OTHER_FILES ?= $(GENERIC_PLATFORM_DIR)/other-files/init
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
-	$(CP) $(INITRAMFS_OTHER_FILES) $(TARGET_DIR)/init
-	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR) $(TARGET_DIR)/init)
+	$(foreach file,$(INITRAMFS_OTHER_FILES), \
+		$(CP) $(file) $(TARGET_DIR)/$(shell echo "$(file)" | sed -e 's#.*other-files/\(.*\)#\1#');)
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR))
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifneq ($(call qstrip,$(CONFIG_EXTERNAL_CPIO)),)

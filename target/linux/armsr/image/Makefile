@@ -103,7 +103,7 @@ define Device/generic
   GRUB2_VARIANT := generic
   FILESYSTEMS := ext4 squashfs
   UBOOT := $(if $(CONFIG_aarch64),qemu_armv8,qemu_armv7)
-  DEVICE_PACKAGES += partx-utils
+  DEVICE_PACKAGES += partx-utils kmod
 endef
 TARGET_DEVICES += generic
 

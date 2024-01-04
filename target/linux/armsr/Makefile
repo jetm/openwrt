@@ -16,7 +16,8 @@ include $(INCLUDE_DIR)/target.mk
 # blkid used for resolving PARTUUID in sysupgrade
 DEFAULT_PACKAGES += mkf2fs e2fsprogs blkid
 
-INITRAMFS_OTHER_FILES = $(PLATFORM_DIR)/other-files/init
+INITRAMFS_OTHER_FILES = $(PLATFORM_DIR)/other-files/init \
+	$(PLATFORM_DIR)/other-files/etc/modules-list.kmod
 
 # Overwrite global LINUX_KCONFIG_LIST to add arch/arm64/configs/defconfig before
 # armv8 configs
