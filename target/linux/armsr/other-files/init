@@ -16,7 +16,7 @@ mount_setup() {
 mount_setup
 
 # shellcheck disable=SC2046
-modprobe -a $(cat /etc/modules-list.kmod)
+modprobe -a $(cut -d: -f1 /etc/modules-list.kmod)
 
 NEW_ROOT=/new_root
 mkdir -p "${NEW_ROOT}"

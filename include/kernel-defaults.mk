@@ -197,10 +197,9 @@ define Kernel/GenInitrd
 	$(CP) $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules* \
 		$(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)
 	( \
-		cd $(TARGET_DIR); \
-		while IFS= read -r m; do modinfo -b $(TARGET_DIR) -k '$(LINUX_VERSION)' -n "$$$${m}" | \
-			sed -e 's#$(TARGET_DIR)#\./#'; done < $(TARGET_DIR)/etc/modules-list.kmod | \
-			rsync -iv --files-from=- $(TARGET_DIR) $(TARGET_DIR)-initrd; \
+		cd $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/kernel; \
+		cut -d: -f 2 $(TARGET_DIR)/etc/modules-list.kmod | \
+			rsync -iv --files-from=- . $(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)/kernel; \
 		cd $(TARGET_DIR)-initrd; \
 		find . | LC_ALL=C sort | \
 			$(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio; \
