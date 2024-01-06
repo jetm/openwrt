@@ -201,6 +201,7 @@ define Kernel/GenInitrd
 		cut -d: -f 2 $(TARGET_DIR)/etc/modules-list.kmod | \
 			rsync -iv --files-from=- . $(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)/kernel; \
 		cd $(TARGET_DIR)-initrd; \
+		$(STAGING_DIR_HOST)/bin/depmod -e -b $(TARGET_DIR)-initrd -F $(LINUX_DIR)/System.map $(LINUX_VERSION); \
 		find . | LC_ALL=C sort | \
 			$(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio; \
 	)
