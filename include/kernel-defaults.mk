@@ -176,7 +176,7 @@ ifdef CONFIG_TARGET_armsr_armv8
 define Kernel/InstallModules
 	rm -rf $(TARGET_DIR)/lib/modules
 	# Modules are loaded from initrd init script
-	rm -rf $(TARGET_DIR)/etc/modules-boot.d/* $(TARGET_DIR)/etc/modules.d/*
+	rm -rf $(TARGET_DIR)/etc/modules-boot.d $(TARGET_DIR)/etc/modules.d
 	+$(KERNEL_MAKE) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
 	rm -f $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/source \
 		$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/build
@@ -187,6 +187,25 @@ endef
 endif
 
 INITRAMFS_OTHER_FILES ?= $(GENERIC_PLATFORM_DIR)/other-files/init
+
+define Kernel/GenInitrd
+	rm -rf $(TARGET_DIR)-initrd
+	mkdir $(TARGET_DIR)-initrd
+	rsync -ai -f '+ lib/' -f '- lib/modules/***' -f'+ *' \
+		$(TARGET_DIR)/ $(TARGET_DIR)-initrd
+	mkdir -p $(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)/kernel
+	$(CP) $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules* \
+		$(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)
+	( \
+		cd $(TARGET_DIR); \
+		while IFS= read -r m; do modinfo -b $(TARGET_DIR) -k '$(LINUX_VERSION)' -n "$$$${m}" | \
+			sed -e 's#$(TARGET_DIR)#\./#'; done < $(TARGET_DIR)/etc/modules-list.kmod | \
+			rsync -iv --files-from=- $(TARGET_DIR) $(TARGET_DIR)-initrd; \
+		cd $(TARGET_DIR)-initrd; \
+		find . | LC_ALL=C sort | \
+			$(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio; \
+	)
+endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 define Kernel/CompileImage/Initramfs
@@ -199,7 +218,11 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifneq ($(call qstrip,$(CONFIG_EXTERNAL_CPIO)),)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
 else
+ifdef CONFIG_TARGET_armsr_armv8
+	$(call Kernel/GenInitrd)
+else
 	( cd $(TARGET_DIR); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio )
+endif
 endif
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(KERNEL_BUILD_DIR)/initrd.cpio)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),$(STAGING_DIR_HOST)/bin/bzip2 -9 -c < $(KERNEL_BUILD_DIR)/initrd.cpio > $(KERNEL_BUILD_DIR)/initrd.cpio.bzip2)
