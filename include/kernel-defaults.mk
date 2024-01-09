@@ -188,6 +188,7 @@ endif
 
 INITRAMFS_OTHER_FILES ?= $(GENERIC_PLATFORM_DIR)/other-files/init
 
+
 define Kernel/GenInitrd
 	rm -rf $(TARGET_DIR)-initrd
 	mkdir $(TARGET_DIR)-initrd
@@ -197,9 +198,10 @@ define Kernel/GenInitrd
 	$(CP) $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules* \
 		$(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)
 	( \
-		cd $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/kernel; \
-		cut -d: -f 2 $(TARGET_DIR)/etc/modules-list.kmod | \
-			rsync -iv --files-from=- . $(TARGET_DIR)-initrd/lib/modules/$(LINUX_VERSION)/kernel; \
+		cd $(TARGET_DIR); \
+		while IFS= read -r m; do $(STAGING_DIR_HOST)/bin/modinfo -b $(TARGET_DIR) -k '$(LINUX_VERSION)' -n "$$$${m}" | \
+			sed -e 's#$(TARGET_DIR)#\./#'; done < $(TARGET_DIR)/etc/modules-list.kmod | \
+			rsync -iv --files-from=- $(TARGET_DIR) $(TARGET_DIR)-initrd; \
 		cd $(TARGET_DIR)-initrd; \
 		$(STAGING_DIR_HOST)/bin/depmod -e -b $(TARGET_DIR)-initrd -F $(LINUX_DIR)/System.map $(LINUX_VERSION); \
 		find . | LC_ALL=C sort | \
