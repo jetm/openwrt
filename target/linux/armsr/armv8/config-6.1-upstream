@@ -2,7 +2,7 @@
 # Extra modules additions on top of arch/arm64/configs/defconfig
 #
 # Avoid increasing rootfs size by compressing the modules
-CONFIG_MODULE_COMPRESS_GZIP=y
+CONFIG_MODULE_COMPRESS_ZSTD=y
 CONFIG_MODULE_DECOMPRESS=y
 
 # Enable /proc/sys/kernel/hotplug to be used with Busybox mdev
